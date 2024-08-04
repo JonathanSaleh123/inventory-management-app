@@ -33,6 +33,8 @@ const style = {
   color: '#fff',
 }
 
+const contrastColor = "1138FD";
+
 export default function Home() {
   const [inventory, setInventory] = useState([])
   const [open, setOpen] = useState(false)
@@ -41,21 +43,12 @@ export default function Home() {
   const [itemQuantity, setItemQuantity] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // New state for chatbot
+  // Chatbot messages
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  useEffect(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-  }, []);
-  useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-  }, [messages]);
 
+  
   const startNewChat = () => {
     setMessages([]);
   };
@@ -103,7 +96,6 @@ export default function Home() {
       // Otherwise, update the quantity
       await setDoc(docRef, { quantity: validQuantity }, { merge: true })
     }
-  
   await updateInventory()
   }
 
@@ -112,12 +104,7 @@ export default function Home() {
     const docRef = doc(collection(firestore, 'inventory'), item)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data()
-      if (quantity === 1) {
         await deleteDoc(docRef)
-      } else {
-        await setDoc(docRef, { quantity: quantity - 1 })
-      }
     }
     await updateInventory()
   }
@@ -130,6 +117,7 @@ export default function Home() {
     updateInventory()
   }, [])
 
+  // Function to get recipe recommendation
   const getRecipeRecommendation = async () => {
     setIsLoading(true);
     const messageInput = "Suggest a recipe using ingredients from my inventory: " + inventory.map(item => item.name).join(", ");
@@ -155,6 +143,8 @@ export default function Home() {
     }
     setIsLoading(false);
   }
+
+  // Function to chat with AI
   const chatWithAI = async (userMessage) => {
     setIsLoading(true);
     const updatedMessages = [
@@ -187,6 +177,7 @@ export default function Home() {
     }
     setIsLoading(false);
   }
+
   // Function to handle sending a message
   const handleSendMessage = async () => {
     if (inputMessage.trim() !== '') {
@@ -204,7 +195,6 @@ export default function Home() {
         height: "100vh",
         display: 'flex',
         bgcolor: '#121212',
-        color: '#fff',
       }}
       >
         {/* Left Side of the page */}
@@ -212,7 +202,7 @@ export default function Home() {
         sx={{
           width: '60%',
           height: '100%',
-          p: 3,
+          p: 5,
           overflowY: 'auto',
         }}
         >
@@ -225,23 +215,23 @@ export default function Home() {
         >
           <Box sx={style}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
-              Add Item
+              Add New Item
             </Typography>
             
-            <Stack width="100%" direction={'column'} spacing={2}>
+            <Stack width="100%" direction={'column'} spacing={3}>
               <TextField
-                label="Item"
+                label="Item Name"
                 variant="outlined"
                 fullWidth
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 sx={{
                   input: { color: '#fff' },
-                  '& label': { color: '#aaa' },
+                  '& label': { color: '#CECACA' },
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#333' },
-                    '&:hover fieldset': { borderColor: '#0ff' },
-                    '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                    '&:hover fieldset': { borderColor: contrastColor },
+                    '&.Mui-focused fieldset': { borderColor: contrastColor },
                   },
                 }}
               />
@@ -255,11 +245,11 @@ export default function Home() {
                 onChange={(e) => setItemDescription(e.target.value)}
                 sx={{
                   textarea: { color: '#fff' },
-                  '& label': { color: '#aaa' },
+                  '& label': { color: '#CECACA' },
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#333' },
-                    '&:hover fieldset': { borderColor: '#0ff' },
-                    '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                    '&:hover fieldset': { borderColor: contrastColor },
+                    '&.Mui-focused fieldset': { borderColor: contrastColor },
                   },
                 }}
               />
@@ -272,11 +262,11 @@ export default function Home() {
                 onChange={(e) => setItemQuantity(Math.max(1, parseInt(e.target.value) || 0))}
                 sx={{
                   input: { color: '#fff' },
-                  '& label': { color: '#aaa' },
+                  '& label': { color: '#CECACA' },
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#333' },
-                    '&:hover fieldset': { borderColor: '#0ff' },
-                    '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                    '&:hover fieldset': { borderColor: contrastColor },
+                    '&.Mui-focused fieldset': { borderColor: contrastColor },
                   },
                 }}
               />
@@ -290,10 +280,9 @@ export default function Home() {
                   handleClose()
                 }}
                 sx={{
-                  bgcolor: '#00bcd4',
+                  bgcolor: contrastColor,
                   '&:hover': {
-                    bgcolor: '#00acc1',
-                    boxShadow: '0 0 10px #00bcd4',
+                    boxShadow: '0 0 10px #1138FD',
                   },
                 }}
               >
@@ -302,14 +291,14 @@ export default function Home() {
             </Stack>
           </Box>
         </Modal>
+        
         {/* Button for adding new item */}
         <Button 
           variant="contained" 
           onClick={handleOpen}
           sx={{
-            bgcolor: '#00bcd4',
+            bgcolor: contrastColor,
             '&:hover': {
-              bgcolor: '#00acc1',
               boxShadow: '0 0 10px #00bcd4',
             },
             mb: 2,
@@ -359,8 +348,8 @@ export default function Home() {
                 '& label': { color: '#aaa' },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#333' },
-                  '&:hover fieldset': { borderColor: '#0ff' },
-                  '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                  '&:hover fieldset': { borderColor: contrastColor },
+                  '&.Mui-focused fieldset': { borderColor: contrastColor },
                 },
               }}
             />
@@ -399,8 +388,8 @@ export default function Home() {
                         mr: 2,
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': { borderColor: '#333' },
-                          '&:hover fieldset': { borderColor: '#0ff' },
-                          '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                          '&:hover fieldset': { borderColor: contrastColor },
+                          '&.Mui-focused fieldset': { borderColor: contrastColor },
                         },
                       }}
                     />
@@ -439,7 +428,7 @@ export default function Home() {
           flexDirection: 'column',
         }}
       >
-        <Typography variant="h4" sx={{ mb: 2, color: '#00bcd4' }}>
+        <Typography variant="h4" sx={{ mb: 2, color: '#FFFFFF' }}>
           Inventory Assistant
           {/* New Chat */}
           <Button
@@ -447,11 +436,9 @@ export default function Home() {
             onClick={startNewChat}
             sx={{
               width: 'fit-content',
-              bgcolor: '#00bcd4',
-              mb: 2,
-              ml: 2,
+              bgcolor: contrastColor,
+              ml: 5,
               '&:hover': {
-                bgcolor: '#00acc1',
                 boxShadow: '0 0 10px #00bcd4',
               },
             }}
@@ -465,10 +452,9 @@ export default function Home() {
           variant="contained"
           onClick={getRecipeRecommendation}
           sx={{
-            bgcolor: '#00bcd4',
+            bgcolor: contrastColor,
             mb: 2,
             '&:hover': {
-              bgcolor: '#00acc1',
               boxShadow: '0 0 10px #00bcd4',
             },
           }}
@@ -503,7 +489,7 @@ export default function Home() {
                   maxWidth: '80%',
                   p: 2,
                   mb: 2,
-                  bgcolor: message.sender === 'user' ? '#00bcd4' : '#333',
+                  bgcolor: message.sender === 'user' ? "#4664F7" : '#333',
                   borderRadius: '10px',
                   alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
                   boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
@@ -533,7 +519,7 @@ export default function Home() {
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Ask about the recipe or cooking..."
+              placeholder="Ask me anything..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -541,7 +527,7 @@ export default function Home() {
                 endAdornment: (
                   <InputAdornment position="end">
                     <Button onClick={handleSendMessage}>
-                      <SendIcon sx={{ color: '#00bcd4' }} />
+                      <SendIcon sx={{ color: contrastColor }} />
                     </Button>
                   </InputAdornment>
                 ),
@@ -550,8 +536,8 @@ export default function Home() {
                 input: { color: '#fff' },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#333' },
-                  '&:hover fieldset': { borderColor: '#0ff' },
-                  '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                  '&:hover fieldset': { borderColor: '#4664F7' },
+                  '&.Mui-focused fieldset': { borderColor: '#4664F7' },
                 },
               }}
             />
