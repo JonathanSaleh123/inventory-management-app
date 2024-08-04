@@ -33,7 +33,7 @@ const style = {
   color: '#fff',
 }
 
-const contrastColor = "1138FD";
+const contrastColor = "#1138FD";
 
 export default function Home() {
   const [inventory, setInventory] = useState([])
@@ -94,7 +94,9 @@ export default function Home() {
       await deleteDoc(docRef)
     } else {
       // Otherwise, update the quantity
-      await setDoc(docRef, { quantity: validQuantity }, { merge: true })
+      const docSnap = await getDoc(docRef)
+      const { quantity, description: existingDescription } = docSnap.data()
+      await setDoc(docRef, { quantity: validQuantity, description: existingDescription }, { merge: true })
     }
   await updateInventory()
   }
@@ -299,9 +301,9 @@ export default function Home() {
           sx={{
             bgcolor: contrastColor,
             '&:hover': {
-              boxShadow: '0 0 10px #00bcd4',
+              boxShadow: '0 0 10px "#1138FD"',
             },
-            mb: 2,
+            mb: 4,
           }}
         >
           Add New Item
@@ -311,7 +313,7 @@ export default function Home() {
           border: '1px solid #333', 
           borderRadius: '10px', 
           overflow: 'hidden',
-          boxShadow: '0 0 20px rgba(0, 255, 255, 0.1)',
+          boxShadow: '0 0 20px rgba(17, 56, 253)',
         }}>
           {/* Title */}
           <Box
@@ -365,7 +367,7 @@ export default function Home() {
                   p: 2,
                   transition: 'all 0.3s',
                   '&:hover': {
-                    boxShadow: '0 0 10px rgba(0, 255, 255, 0.3)',
+                    boxShadow: '0 0 10px rgba(17, 56, 253, 0.8)',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -489,7 +491,7 @@ export default function Home() {
                   maxWidth: '80%',
                   p: 2,
                   mb: 2,
-                  bgcolor: message.sender === 'user' ? "#4664F7" : '#333',
+                  bgcolor: message.sender === 'user' ? contrastColor : '#333',
                   borderRadius: '10px',
                   alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
                   boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
@@ -536,8 +538,8 @@ export default function Home() {
                 input: { color: '#fff' },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#333' },
-                  '&:hover fieldset': { borderColor: '#4664F7' },
-                  '&.Mui-focused fieldset': { borderColor: '#4664F7' },
+                  '&:hover fieldset': { borderColor: contrastColor },
+                  '&.Mui-focused fieldset': { borderColor: contrastColor },
                 },
               }}
             />
