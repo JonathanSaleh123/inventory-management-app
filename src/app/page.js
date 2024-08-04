@@ -5,6 +5,7 @@ import { Box, Stack, Typography, Button, Modal, TextField, InputAdornment, Paper
 import SearchIcon from '@mui/icons-material/Search'
 import SendIcon from '@mui/icons-material/Send'
 import { firestore } from '../firebase'
+import {client} from '../openai'
 import {
   collection,
   doc,
@@ -41,19 +42,19 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
 
   // New state for chatbot
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    return savedMessages ? JSON.parse(savedMessages) : [];
+  });
   const [inputMessage, setInputMessage] = useState('');
-  // Function to handle sending a message
-  const handleSendMessage = () => {
-    if (inputMessage.trim() !== '') {
-      setMessages([...messages, { text: inputMessage, sender: 'user' }]);
-      setInputMessage('');
-      // Here you would typically call an API to get the chatbot's response
-      // For now, we'll just simulate a response
-      setTimeout(() => {
-        setMessages(prevMessages => [...prevMessages, { text: "I'm a chatbot. How can I help you?", sender: 'bot' }]);
-      }, 1000);
-    }
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+  }, [messages]);
+
+  const startNewChat = () => {
+    setMessages([]);
   };
 
   //For Filtering the inventory
@@ -126,6 +127,72 @@ export default function Home() {
     updateInventory()
   }, [])
 
+  const getRecipeRecommendation = async () => {
+    setIsLoading(true);
+    const messageInput = "Suggest a recipe using ingredients from my inventory: " + inventory.map(item => item.name).join(", ");
+    try {
+      const response = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: "system", content: "You are a helpful cooking assistant." },
+          { role: "user", content: messageInput },
+        ],
+        max_tokens: 150,
+        temperature: 0.8,
+      });
+      console.log(response.choices[0]);
+      const recipe = response.choices[0].message.content.trim();
+      const formattedRecipe = recipe.replace(/\n/g, '\n\n');
+      setMessages(prevMessages => [...prevMessages, 
+        { text: messageInput, sender: 'user' },
+        { text: formattedRecipe, sender: 'bot' }]);
+    } catch (error) {
+      console.error("Error getting Recs: ", error);
+      setMessages(prevMessages => [...prevMessages, { text: "Sorry, I couldn't find a recipe. Please try again later.", sender: 'bot' }]);
+    }
+    setIsLoading(false);
+  }
+  const chatWithAI = async (userMessage) => {
+    setIsLoading(true);
+    const updatedMessages = [
+      ...messages,
+      { role: "user", content: userMessage },
+    ];
+    try {
+      const response = await client.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: updatedMessages, messages: updatedMessages.map(message => ({
+          role: message.sender === 'bot' ? 'assistant' : 'user',
+          content: message.text || message.content
+        })),
+        max_tokens: 300,
+        temperature: 0.7,
+      });
+      console.log(response.choices[0]);
+      const aiResponse = response.choices[0].message.content.trim();
+      const formattedResponse = aiResponse.replace(/\n/g, '\n\n');
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { text: formattedResponse, sender: 'bot' }
+      ]);
+    } catch (error) {
+      console.error("Error chatting with AI:", error);
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { text: "Sorry, I couldn't process your message at this time.", sender: 'bot' }
+      ]);
+    }
+    setIsLoading(false);
+  }
+  // Function to handle sending a message
+  const handleSendMessage = async () => {
+    if (inputMessage.trim() !== '') {
+      setMessages(prevMessages => [...prevMessages, { text: inputMessage, sender: 'user' }]);
+      setInputMessage('');
+      await chatWithAI(inputMessage);
+    }
+  };
+  
     return (
       // Main container
       <Box
@@ -371,8 +438,40 @@ export default function Home() {
       >
         <Typography variant="h4" sx={{ mb: 2, color: '#00bcd4' }}>
           Inventory Assistant
+          {/* New Chat */}
+          <Button
+            variant="contained"
+            onClick={startNewChat}
+            sx={{
+              width: 'fit-content',
+              bgcolor: '#00bcd4',
+              mb: 2,
+              ml: 2,
+              '&:hover': {
+                bgcolor: '#00acc1',
+                boxShadow: '0 0 10px #00bcd4',
+              },
+            }}
+          >
+            New Chat
+          </Button>
         </Typography>
+        
         {/* Chatbot */}
+        <Button
+          variant="contained"
+          onClick={getRecipeRecommendation}
+          sx={{
+            bgcolor: '#00bcd4',
+            mb: 2,
+            '&:hover': {
+              bgcolor: '#00acc1',
+              boxShadow: '0 0 10px #00bcd4',
+            },
+          }}
+        >
+          Get Recipe Recommendation
+        </Button>
         <Paper
           elevation={3}
           sx={{
@@ -398,24 +497,40 @@ export default function Home() {
               <Box
                 key={index}
                 sx={{
-                  maxWidth: '70%',
-                  p: 1,
-                  mb: 1,
+                  maxWidth: '80%',
+                  p: 2,
+                  mb: 2,
                   bgcolor: message.sender === 'user' ? '#00bcd4' : '#333',
                   borderRadius: '10px',
                   alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
                 }}
               >
-                <Typography>{message.text}</Typography>
+                <Typography
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    color: message.sender === 'user' ? '#fff' : '#f0f0f0',
+                    fontSize: '1rem',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {message.text}
+                </Typography>
               </Box>
             ))}
+            {isLoading && (
+              <Box sx={{ alignSelf: 'flex-start', color: '#aaa' }}>
+                <Typography>Thinking...</Typography>
+              </Box>
+            )}
           </Box>
           {/* chatbot input */}
           <Box sx={{ p: 2, bgcolor: '#252525' }}>
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Type a message..."
+              placeholder="Ask about the recipe or cooking..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
