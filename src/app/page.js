@@ -55,6 +55,8 @@ export default function Home() {
       }, 1000);
     }
   };
+
+  //For Filtering the inventory
   const filteredInventory = inventory.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,6 +72,7 @@ export default function Home() {
     })
     setInventory(inventoryList)
   }
+
   //Adds an item to the inventory
   const addItem = async (item, description, initialQuantity) => {
     const docRef = doc(collection(firestore, 'inventory'), item)
@@ -85,6 +88,7 @@ export default function Home() {
     }
     await updateInventory()
   }
+  //Updates the quantity of an item in the inventory
   const updateItemQuantity = async (item, newQuantity) => {
     const docRef = doc(collection(firestore, 'inventory'), item)
     const validQuantity = Math.max(0, parseInt(newQuantity) || 0)
@@ -98,6 +102,7 @@ export default function Home() {
   
   await updateInventory()
   }
+
   //Removes an item from the inventory
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item)
@@ -112,29 +117,36 @@ export default function Home() {
     }
     await updateInventory()
   }
+  //Opens the modal/pop-up
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
 
+  // Fetch the inventory from the database when the component mounts
   useEffect(() => {
     updateInventory()
   }, [])
-    // We'll add our component logic here
 
     return (
+      // Main container
       <Box
-        sx={{
-          width: "100vw",
-          minHeight: "100vh",
-          display: 'flex',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2,
-          bgcolor: '#121212',
-          color: '#fff',
-          padding: '2rem',
-        }}
+      sx={{
+        width: "100vw",
+        height: "100vh",
+        display: 'flex',
+        bgcolor: '#121212',
+        color: '#fff',
+      }}
       >
+        {/* Left Side of the page */}
+        <Box
+        sx={{
+          width: '60%',
+          height: '100%',
+          p: 3,
+          overflowY: 'auto',
+        }}
+        >
+          {/* Form for adding Item*/}
         <Modal
           open={open}
           onClose={handleClose}
@@ -145,6 +157,7 @@ export default function Home() {
             <Typography id="modal-modal-title" variant="h6" component="h2">
               Add Item
             </Typography>
+            
             <Stack width="100%" direction={'column'} spacing={2}>
               <TextField
                 label="Item"
@@ -219,7 +232,7 @@ export default function Home() {
             </Stack>
           </Box>
         </Modal>
-  
+        {/* Button for adding new item */}
         <Button 
           variant="contained" 
           onClick={handleOpen}
@@ -234,14 +247,14 @@ export default function Home() {
         >
           Add New Item
         </Button>
-  
+        {/* Inventory Items */}
         <Box sx={{ 
           border: '1px solid #333', 
           borderRadius: '10px', 
           overflow: 'hidden',
           boxShadow: '0 0 20px rgba(0, 255, 255, 0.1)',
-          width: '800px',
         }}>
+          {/* Title */}
           <Box
             sx={{
               bgcolor: '#1E1E1E',
@@ -255,7 +268,7 @@ export default function Home() {
               Inventory Items
             </Typography>
           </Box>
-  
+          {/* Search Bar */}
           <Box sx={{ p: 2 }}>
             <TextField
               fullWidth
@@ -282,7 +295,7 @@ export default function Home() {
               }}
             />
           </Box>
-  
+          {/* Inventory List */}
           <Stack sx={{ height: '300px', overflow: 'auto', p: 2 }} spacing={2}>
             {filteredInventory.map(({name, quantity, description}) => (
               <Box
@@ -345,5 +358,88 @@ export default function Home() {
           </Stack>
         </Box>
       </Box>
+      {/* Right Side of the page */}
+      <Box
+        sx={{
+          width: '40%',
+          height: '100%',
+          p: 3,
+          borderLeft: '1px solid #333',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Typography variant="h4" sx={{ mb: 2, color: '#00bcd4' }}>
+          Inventory Assistant
+        </Typography>
+        {/* Chatbot */}
+        <Paper
+          elevation={3}
+          sx={{
+            flex: 1,
+            bgcolor: '#1E1E1E',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Chat messages */}
+          <Box
+            sx={{
+              flex: 1,
+              p: 2,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {messages.map((message, index) => (
+              <Box
+                key={index}
+                sx={{
+                  maxWidth: '70%',
+                  p: 1,
+                  mb: 1,
+                  bgcolor: message.sender === 'user' ? '#00bcd4' : '#333',
+                  borderRadius: '10px',
+                  alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <Typography>{message.text}</Typography>
+              </Box>
+            ))}
+          </Box>
+          {/* chatbot input */}
+          <Box sx={{ p: 2, bgcolor: '#252525' }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Type a message..."
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Button onClick={handleSendMessage}>
+                      <SendIcon sx={{ color: '#00bcd4' }} />
+                    </Button>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                input: { color: '#fff' },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: '#333' },
+                  '&:hover fieldset': { borderColor: '#0ff' },
+                  '&.Mui-focused fieldset': { borderColor: '#0ff' },
+                },
+              }}
+            />
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
     )
   }
